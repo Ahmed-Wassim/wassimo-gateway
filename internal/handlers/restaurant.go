@@ -12,6 +12,9 @@ type Handler struct {
 
 func (h *Handler) Restaurants(w http.ResponseWriter, r *http.Request) {
 	url := h.CatalogBase + "/restaurants"
+	if r.URL.RawQuery != "" {
+		url += "?" + r.URL.RawQuery
+	}
 
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)
 	if err != nil {
