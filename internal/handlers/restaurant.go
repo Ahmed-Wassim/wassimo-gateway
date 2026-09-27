@@ -3,6 +3,8 @@ package handlers
 import (
 	"io"
 	"net/http"
+
+	"github.com/ahmed-wassim/wassimo-gateway/internal/helpers"
 )
 
 type Handler struct {
@@ -20,6 +22,10 @@ func (h *Handler) Restaurants(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return
+	}
+
+	if id := helpers.FromContext(r.Context()); id != "" {
+		req.Header.Set("X-Request-ID", id)
 	}
 
 	resp, err := h.Client.Do(req)
