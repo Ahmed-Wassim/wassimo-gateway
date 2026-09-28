@@ -48,7 +48,7 @@ and never baked into images.
 ## Behavior
 
 ```text
-GET /restaurants (+ query string) → forwarded to Catalog, status/body copied verbatim
+GET /restaurants... (any catalog path + query, any method) → forwarded verbatim, status/body copied
 X-Request-ID: generated when missing, returned on every response, propagated upstream
 Upstream failure or timeout (5s) → 502 {"error":"upstream unavailable"}
 ```
