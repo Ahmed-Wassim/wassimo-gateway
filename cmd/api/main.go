@@ -25,7 +25,8 @@ func main() {
 	})
 
 	h := &handlers.Handler{CatalogBase: cfg.CATALOG_SERVICE_URL, Client: &http.Client{Timeout: 5 * time.Second}}
-	mux.HandleFunc("/restaurants", h.Restaurants)
+	mux.HandleFunc("/restaurants", h.Proxy)
+	mux.HandleFunc("/restaurants/", h.Proxy)
 
 	if err := http.ListenAndServe(":"+cfg.PORT, requestID(mux)); err != nil {
 		log.Fatal("server is down ", err)

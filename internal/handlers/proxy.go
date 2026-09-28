@@ -12,16 +12,20 @@ type Handler struct {
 	Client      *http.Client
 }
 
-func (h *Handler) Restaurants(w http.ResponseWriter, r *http.Request) {
-	url := h.CatalogBase + "/restaurants"
+func (h *Handler) Proxy(w http.ResponseWriter, r *http.Request) {
+	url := h.CatalogBase + r.URL.Path
 	if r.URL.RawQuery != "" {
 		url += "?" + r.URL.RawQuery
 	}
 
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(r.Context(), r.Method, url, r.Body)
 	if err != nil {
 		http.Error(w, `{"error":"internal"}`, http.StatusInternalServerError)
 		return
+	}
+
+	if ct := r.Header.Get("Content-Type"); ct != "" {
+		req.Header.Set("Content-Type", ct)
 	}
 
 	if id := helpers.FromContext(r.Context()); id != "" {
