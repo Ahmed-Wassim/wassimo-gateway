@@ -49,6 +49,7 @@ and never baked into images.
 
 ```text
 GET /restaurants... (any catalog path + query, any method) → forwarded verbatim, status/body copied
+/internal/* NOT proxied — internal endpoints are reachable only over the service network
 X-Request-ID: generated when missing, returned on every response, propagated upstream
 Upstream failure or timeout (5s) → 502 {"error":"upstream unavailable"}
 ```
