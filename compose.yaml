@@ -14,6 +14,21 @@ services:
     networks:
       - wassimo-network
 
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9071:8080"
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+      - ENV=dev
+      - CATALOG_SERVICE_URL=http://app:8080
+    networks:
+      - wassimo-network
+
 networks:
   wassimo-network:
     external: true
