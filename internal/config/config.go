@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	PORT                string
-	CATALOG_SERVICE_URL string
-	ENV                 string
+	PORT                 string
+	CATALOG_SERVICE_URL  string
+	IDENTITY_SERVICE_URL string
+	ENV                  string
 }
 
 func Load() (*Config, error) {
@@ -18,13 +19,17 @@ func Load() (*Config, error) {
 		_ = godotenv.Load()
 	}
 	cfg := &Config{
-		PORT:                getEnv("PORT", "8080"),
-		CATALOG_SERVICE_URL: getEnv("CATALOG_SERVICE_URL", ""),
-		ENV:                 getEnv("ENV", "development"),
+		PORT:                 getEnv("PORT", "8080"),
+		CATALOG_SERVICE_URL:  getEnv("CATALOG_SERVICE_URL", ""),
+		IDENTITY_SERVICE_URL: getEnv("IDENTITY_SERVICE_URL", ""),
+		ENV:                  getEnv("ENV", "development"),
 	}
 
 	if cfg.CATALOG_SERVICE_URL == "" {
 		return nil, fmt.Errorf("CATALOG_SERVICE_URL is required")
+	}
+	if cfg.IDENTITY_SERVICE_URL == "" {
+		return nil, fmt.Errorf("IDENTITY_SERVICE_URL is required")
 	}
 	return cfg, nil
 }

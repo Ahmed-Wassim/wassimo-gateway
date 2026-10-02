@@ -17,16 +17,54 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
+	// Shared HTTP client — one per process, not per request.
+	// Proxy timeout: 5s (generous for menu queries).
+	// Auth timeout: 2s (enforced inside RequireAuth — auth is in front of
+	// every protected request so a tight budget is essential).
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	h := &handlers.Handler{
+		CatalogBase:  cfg.CATALOG_SERVICE_URL,
+		IdentityBase: cfg.IDENTITY_SERVICE_URL,
+		Client:       client,
+	}
+
+	requireAuth := handlers.RequireAuth(cfg.IDENTITY_SERVICE_URL, client)
+
 	mux := http.NewServeMux()
+
+	// ── Health (gateway-own, no upstream) ────────────────────────────────
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	h := &handlers.Handler{CatalogBase: cfg.CATALOG_SERVICE_URL, Client: &http.Client{Timeout: 5 * time.Second}}
+	// ── Catalog routes (public) ───────────────────────────────────────────
 	mux.HandleFunc("/restaurants", h.Proxy)
 	mux.HandleFunc("/restaurants/", h.Proxy)
+
+	// ── Identity: public auth routes ──────────────────────────────────────
+	// These must NOT require a token — register/login/forgot are how a user
+	// gets a token in the first place.
+	mux.HandleFunc("/auth/register",         h.ProxyIdentity)
+	mux.HandleFunc("/auth/login",            h.ProxyIdentity)
+
+	// ── Identity: protected auth routes ──────────────────────────────────
+	// Each route is wrapped individually (not globally) so public catalog
+	// browsing keeps working when identity is down. ADR-013 v2.
+	mux.Handle("/auth/me",              requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/logout",          requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/logout-all",      requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/tokens",          requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/tokens/",         requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/password/change", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+
+	// ── Identity: ready probe (proxy to identity /ready) ─────────────────
+	mux.HandleFunc("/identity/ready", h.ProxyIdentity)
+
+	log.Printf("gateway listening on :%s  catalog=%s  identity=%s",
+		cfg.PORT, cfg.CATALOG_SERVICE_URL, cfg.IDENTITY_SERVICE_URL)
 
 	if err := http.ListenAndServe(":"+cfg.PORT, requestID(mux)); err != nil {
 		log.Fatal("server is down ", err)

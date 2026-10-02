@@ -11,6 +11,7 @@ services:
       - PORT=8080
       - ENV=dev
       - CATALOG_SERVICE_URL=http://app:8080
+      - IDENTITY_SERVICE_URL=http://identity:8000
     networks:
       - wassimo-network
 
@@ -26,6 +27,7 @@ services:
       - PORT=8080
       - ENV=dev
       - CATALOG_SERVICE_URL=http://app:8080
+      - IDENTITY_SERVICE_URL=http://identity:8000
     networks:
       - wassimo-network
 
