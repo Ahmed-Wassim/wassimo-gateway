@@ -50,6 +50,7 @@ func main() {
 
 	mux.HandleFunc("/restaurants", h.Proxy)
 	mux.HandleFunc("/restaurants/", h.Proxy)
+	mux.HandleFunc("/branches/", h.Proxy)
 
 	mux.HandleFunc("/auth/register", h.ProxyIdentity)
 	mux.HandleFunc("/auth/login", h.ProxyIdentity)
