@@ -407,8 +407,9 @@ identity app/Services/JwtService.php     issue + verify (EdDSA, iss/aud enforced
 
 1. `internal/jwt`: `LoadPublicKey` doesn't length-check (32 bytes) — the
    truncated-key incident booted fine and failed every token. Add the check.
-2. `.env.example`: missing `IDENTITY_SERVICE_URL` and all `JWT_*` — fresh
-   checkouts can't boot. Add with placeholder values.
+2. ~~`.env.example`: missing `IDENTITY_SERVICE_URL` and all `JWT_*` — fresh
+   checkouts can't boot. Add with placeholder values.~~ Done: `.env.example`
+   now documents all required vars (key as placeholder to copy from identity).
 3. Gateway never forwards `X-User-*` upstream and identity re-verifies the
    JWT itself, so the headers are currently informational. Either forward
    them (needs an identity trust rule) or document them as observability-only.
