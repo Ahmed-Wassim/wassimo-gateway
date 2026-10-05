@@ -66,6 +66,10 @@ func RequireAuth(identityBase string, client *http.Client) func(http.Handler) ht
 				return
 			}
 			meReq.Header.Set("Authorization", authHeader)
+			// Identity renders errors as JSON only for JSON callers; without
+			// Accept it falls back to a browser-style redirect to route(login),
+			// which does not exist (API-only service) and 500s. Always ask JSON.
+			meReq.Header.Set("Accept", "application/json")
 
 			resp, err := client.Do(meReq)
 			if err != nil {

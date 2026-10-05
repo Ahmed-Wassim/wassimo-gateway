@@ -49,6 +49,7 @@ func main() {
 	// gets a token in the first place.
 	mux.HandleFunc("/auth/register",         h.ProxyIdentity)
 	mux.HandleFunc("/auth/login",            h.ProxyIdentity)
+	mux.HandleFunc("/auth/refresh",          h.ProxyIdentity)
 
 	// ── Identity: protected auth routes ──────────────────────────────────
 	// Each route is wrapped individually (not globally) so public catalog
@@ -60,8 +61,21 @@ func main() {
 	mux.Handle("/auth/tokens/",         requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 	mux.Handle("/auth/password/change", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 
-	// ── Identity: ready probe (proxy to identity /ready) ─────────────────
-	mux.HandleFunc("/identity/ready", h.ProxyIdentity)
+	// ── Identity: admin user/role surfaces (protected) ───────────────────
+	// Identity enforces the users.* permissions itself; the gateway only
+	// proves who the caller is, same as the /auth/* protected routes.
+	mux.Handle("/users",       requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/users/",      requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/roles",       requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/permissions", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+
+	// ── Identity: ready probe ─────────────────────────────────────────────
+	// Keep-path would forward /identity/ready upstream, which does not exist.
+	// Rewrite to identity's /ready before proxying.
+	mux.HandleFunc("/identity/ready", func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "/ready"
+		h.ProxyIdentity(w, r)
+	})
 
 	log.Printf("gateway listening on :%s  catalog=%s  identity=%s",
 		cfg.PORT, cfg.CATALOG_SERVICE_URL, cfg.IDENTITY_SERVICE_URL)

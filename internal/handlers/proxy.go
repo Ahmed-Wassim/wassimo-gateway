@@ -49,6 +49,19 @@ func (h *Handler) proxyTo(w http.ResponseWriter, r *http.Request, base string) {
 		req.Header.Set("Content-Type", ct)
 	}
 
+	// Forward the caller's auth and content negotiation. Identity
+	// authenticates the Bearer token itself on protected routes — stripping
+	// Authorization here would turn every gatewayed protected call into a
+	// 401 from identity even after RequireAuth already accepted it.
+	// Accept must survive so validation errors come back as JSON, not HTML.
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		req.Header.Set("Authorization", auth)
+	}
+
+	if accept := r.Header.Get("Accept"); accept != "" {
+		req.Header.Set("Accept", accept)
+	}
+
 	if id := helpers.FromContext(r.Context()); id != "" {
 		req.Header.Set("X-Request-ID", id)
 	}
