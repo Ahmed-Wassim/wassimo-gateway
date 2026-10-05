@@ -15,8 +15,7 @@ type Handler struct {
 	Client       *http.Client
 }
 
-// Proxy forwards to catalog; ProxyIdentity to identity. Keep-path: the
-// upstream URL is base + path, so main.go decides routing without rewrites here.
+// Keep-path proxy: upstream URL is base + path, so main.go owns routing.
 func (h *Handler) Proxy(w http.ResponseWriter, r *http.Request) {
 	h.proxyTo(w, r, h.CatalogBase)
 }

@@ -30,18 +30,15 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Health is gateway-own, no upstream.
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// Catalog (public).
 	mux.HandleFunc("/restaurants", h.Proxy)
 	mux.HandleFunc("/restaurants/", h.Proxy)
 
-	// Public auth: no token needed to get a token.
 	mux.HandleFunc("/auth/register",         h.ProxyIdentity)
 	mux.HandleFunc("/auth/login",            h.ProxyIdentity)
 	mux.HandleFunc("/auth/refresh",          h.ProxyIdentity)
