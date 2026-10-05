@@ -51,6 +51,9 @@ func main() {
 	mux.HandleFunc("/restaurants", h.Proxy)
 	mux.HandleFunc("/restaurants/", h.Proxy)
 	mux.HandleFunc("/branches/", h.Proxy)
+	// Catalog operator writes (public for now; operator auth is a later slice).
+	mux.HandleFunc("/categories/", h.Proxy)
+	mux.HandleFunc("/items/", h.Proxy)
 
 	mux.HandleFunc("/auth/register", h.ProxyIdentity)
 	mux.HandleFunc("/auth/login", h.ProxyIdentity)
