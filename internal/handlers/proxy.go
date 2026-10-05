@@ -8,27 +8,19 @@ import (
 )
 
 // Handler holds the upstream base URLs and the shared HTTP client.
-// Adding a new service is: add a *Base field + register routes in main.go.
-// The Proxy function itself never changes.
+// New service = new *Base field + routes in main.go.
 type Handler struct {
 	CatalogBase  string
 	IdentityBase string
 	Client       *http.Client
 }
 
-// Proxy forwards the request to the correct upstream using the base URL
-// embedded in the handler the route was registered on.
-//
-// Keep-path design: the upstream URL is base + r.URL.Path, so route
-// registration in main.go determines which service receives the request
-// without any path rewriting here.
+// Proxy forwards to catalog; ProxyIdentity to identity. Keep-path: the
+// upstream URL is base + path, so main.go decides routing without rewrites here.
 func (h *Handler) Proxy(w http.ResponseWriter, r *http.Request) {
 	h.proxyTo(w, r, h.CatalogBase)
 }
 
-// ProxyIdentity forwards to the identity upstream.
-// Split from Proxy so the auth middleware can target identity specifically
-// without embedding the URL in the middleware itself.
 func (h *Handler) ProxyIdentity(w http.ResponseWriter, r *http.Request) {
 	h.proxyTo(w, r, h.IdentityBase)
 }
@@ -49,11 +41,8 @@ func (h *Handler) proxyTo(w http.ResponseWriter, r *http.Request, base string) {
 		req.Header.Set("Content-Type", ct)
 	}
 
-	// Forward the caller's auth and content negotiation. Identity
-	// authenticates the Bearer token itself on protected routes — stripping
-	// Authorization here would turn every gatewayed protected call into a
-	// 401 from identity even after RequireAuth already accepted it.
-	// Accept must survive so validation errors come back as JSON, not HTML.
+	// Identity authenticates the Bearer itself; stripping it would 401 every
+	// protected call. Accept survives so errors come back JSON, not HTML.
 	if auth := r.Header.Get("Authorization"); auth != "" {
 		req.Header.Set("Authorization", auth)
 	}
