@@ -3,11 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ahmed-wassim/wassimo-gateway/internal/config"
 	"github.com/ahmed-wassim/wassimo-gateway/internal/handlers"
 	"github.com/ahmed-wassim/wassimo-gateway/internal/helpers"
+	"github.com/ahmed-wassim/wassimo-gateway/internal/jwt"
 	"github.com/google/uuid"
 )
 
@@ -17,7 +19,7 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	// One shared client: 5s proxy timeout; auth enforces a tighter 2s inside RequireAuth.
+	// One shared client with a 5s proxy timeout; auth is local JWT verification.
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	h := &handlers.Handler{
@@ -26,7 +28,17 @@ func main() {
 		Client:       client,
 	}
 
-	requireAuth := handlers.RequireAuth(cfg.IDENTITY_SERVICE_URL, client)
+	pub, err := jwt.LoadPublicKey(cfg.JWT_PUBLIC_KEY)
+	if err != nil {
+		log.Fatalf("jwt public key: %v", err)
+	}
+
+	requireAuth := handlers.RequireAuth(pub, jwt.VerifierConfig{
+		Issuer:   cfg.JWT_ISSUER,
+		Audience: strings.Split(cfg.JWT_AUDIENCE, ","),
+		Kid:      cfg.JWT_KID,
+		Leeway:   30 * time.Second,
+	})
 
 	mux := http.NewServeMux()
 
@@ -39,22 +51,22 @@ func main() {
 	mux.HandleFunc("/restaurants", h.Proxy)
 	mux.HandleFunc("/restaurants/", h.Proxy)
 
-	mux.HandleFunc("/auth/register",         h.ProxyIdentity)
-	mux.HandleFunc("/auth/login",            h.ProxyIdentity)
-	mux.HandleFunc("/auth/refresh",          h.ProxyIdentity)
+	mux.HandleFunc("/auth/register", h.ProxyIdentity)
+	mux.HandleFunc("/auth/login", h.ProxyIdentity)
+	mux.HandleFunc("/auth/refresh", h.ProxyIdentity)
 
 	// Protected auth, wrapped per-route so public browsing survives identity outages.
-	mux.Handle("/auth/me",              requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/auth/logout",          requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/auth/logout-all",      requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/auth/tokens",          requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/auth/tokens/",         requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/me", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/logout", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/logout-all", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/tokens", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/auth/tokens/", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 	mux.Handle("/auth/password/change", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 
 	// Admin surfaces: identity enforces permissions, gateway only identifies the caller.
-	mux.Handle("/users",       requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/users/",      requireAuth(http.HandlerFunc(h.ProxyIdentity)))
-	mux.Handle("/roles",       requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/users", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/users/", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+	mux.Handle("/roles", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 	mux.Handle("/permissions", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 
 	// /identity/ready does not exist upstream; rewrite to identity's /ready.

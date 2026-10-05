@@ -12,6 +12,10 @@ type Config struct {
 	CATALOG_SERVICE_URL  string
 	IDENTITY_SERVICE_URL string
 	ENV                  string
+	JWT_PUBLIC_KEY       string
+	JWT_ISSUER           string
+	JWT_AUDIENCE         string
+	JWT_KID              string
 }
 
 func Load() (*Config, error) {
@@ -23,6 +27,10 @@ func Load() (*Config, error) {
 		CATALOG_SERVICE_URL:  getEnv("CATALOG_SERVICE_URL", ""),
 		IDENTITY_SERVICE_URL: getEnv("IDENTITY_SERVICE_URL", ""),
 		ENV:                  getEnv("ENV", "development"),
+		JWT_PUBLIC_KEY:       getEnv("JWT_PUBLIC_KEY", ""),
+		JWT_ISSUER:           getEnv("JWT_ISSUER", ""),
+		JWT_AUDIENCE:         getEnv("JWT_AUDIENCE", ""),
+		JWT_KID:              getEnv("JWT_KID", ""),
 	}
 
 	if cfg.CATALOG_SERVICE_URL == "" {
@@ -30,6 +38,15 @@ func Load() (*Config, error) {
 	}
 	if cfg.IDENTITY_SERVICE_URL == "" {
 		return nil, fmt.Errorf("IDENTITY_SERVICE_URL is required")
+	}
+	if cfg.JWT_PUBLIC_KEY == "" {
+		return nil, fmt.Errorf("JWT_PUBLIC_KEY is required")
+	}
+	if cfg.JWT_ISSUER == "" {
+		return nil, fmt.Errorf("JWT_ISSUER is required")
+	}
+	if cfg.JWT_AUDIENCE == "" {
+		return nil, fmt.Errorf("JWT_AUDIENCE is required")
 	}
 	return cfg, nil
 }
