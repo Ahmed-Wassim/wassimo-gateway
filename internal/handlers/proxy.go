@@ -12,19 +12,24 @@ import (
 type Handler struct {
 	CatalogBase  string
 	IdentityBase string
+	CartBase     string
 	Client       *http.Client
 }
 
 // Keep-path proxy: upstream URL is base + path, so main.go owns routing.
 func (h *Handler) Proxy(w http.ResponseWriter, r *http.Request) {
-	h.proxyTo(w, r, h.CatalogBase)
+	h.proxyTo(w, r, h.CatalogBase, false)
 }
 
 func (h *Handler) ProxyIdentity(w http.ResponseWriter, r *http.Request) {
-	h.proxyTo(w, r, h.IdentityBase)
+	h.proxyTo(w, r, h.IdentityBase, false)
 }
 
-func (h *Handler) proxyTo(w http.ResponseWriter, r *http.Request, base string) {
+func (h *Handler) ProxyCart(w http.ResponseWriter, r *http.Request) {
+	h.proxyTo(w, r, h.CartBase, true)
+}
+
+func (h *Handler) proxyTo(w http.ResponseWriter, r *http.Request, base string, forwardUser bool) {
 	url := base + r.URL.Path
 	if r.URL.RawQuery != "" {
 		url += "?" + r.URL.RawQuery
@@ -48,6 +53,17 @@ func (h *Handler) proxyTo(w http.ResponseWriter, r *http.Request, base string) {
 
 	if accept := r.Header.Get("Accept"); accept != "" {
 		req.Header.Set("Accept", accept)
+	}
+
+	// Downstream owner headers — cart ONLY. RequireAuth already stripped any
+	// client-sent values and Set verified ones, so forwarding here is safe.
+	// Identity and catalog never receive these (their routes pass false).
+	if forwardUser {
+		for _, k := range []string{"X-User-Id", "X-User-Roles", "X-User-Permissions"} {
+			if v := r.Header.Get(k); v != "" {
+				req.Header.Set(k, v)
+			}
+		}
 	}
 
 	if id := helpers.FromContext(r.Context()); id != "" {

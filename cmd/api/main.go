@@ -25,6 +25,7 @@ func main() {
 	h := &handlers.Handler{
 		CatalogBase:  cfg.CATALOG_SERVICE_URL,
 		IdentityBase: cfg.IDENTITY_SERVICE_URL,
+		CartBase:     cfg.CART_SERVICE_URL,
 		Client:       client,
 	}
 
@@ -72,6 +73,10 @@ func main() {
 	mux.Handle("/users/", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 	mux.Handle("/roles", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
 	mux.Handle("/permissions", requireAuth(http.HandlerFunc(h.ProxyIdentity)))
+
+	// Cart: per-user, always protected. X-User-Id is the cart owner key.
+	mux.Handle("/cart", requireAuth(http.HandlerFunc(h.ProxyCart)))
+	mux.Handle("/cart/", requireAuth(http.HandlerFunc(h.ProxyCart)))
 
 	// /identity/ready does not exist upstream; rewrite to identity's /ready.
 	mux.HandleFunc("/identity/ready", func(w http.ResponseWriter, r *http.Request) {
