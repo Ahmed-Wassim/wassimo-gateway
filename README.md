@@ -39,7 +39,7 @@ docker compose up -d --build            # gateway on localhost:9051
 ```text
 PORT                 gateway port (default 9051 locally, 8080 in container)
 ENV                  dev | prod (.env files load only when ENV != prod)
-CATALOG_SERVICE_URL  catalog base URL (localhost:9050 locally, http://app:8080 in Docker)
+CATALOG_SERVICE_URL  catalog base URL (localhost:9050 locally, http://catalog:8080 in Docker)
 ```
 
 Copy `.env.example` to `.env` and adjust locally. `.env` is never committed

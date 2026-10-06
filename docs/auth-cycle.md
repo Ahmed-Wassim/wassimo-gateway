@@ -348,7 +348,7 @@ multi-cluster routing — today it needs forwarding and one middleware.
 
 - **Why a gateway at all?** One public address, one TLS termination point,
   one place for request IDs/timeouts/CORS, and services stay off the public
-  internet. Clients never learn internal topology (`app:8080`,
+  internet. Clients never learn internal topology (`catalog:8080`,
   `identity:8000`).
 - **What does auth cost per request?** One Ed25519 verify (~tens of µs) plus
   the normal proxy hop. No DB, no identity call on the hot path.
