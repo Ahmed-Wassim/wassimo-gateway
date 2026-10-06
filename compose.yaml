@@ -12,6 +12,7 @@ services:
       - ENV=dev
       - CATALOG_SERVICE_URL=http://catalog:8080
       - IDENTITY_SERVICE_URL=http://identity:8000
+      - CART_SERVICE_URL=http://cart:8080
     networks:
       - wassimo-network
 
@@ -28,6 +29,7 @@ services:
       - ENV=dev
       - CATALOG_SERVICE_URL=http://catalog:8080
       - IDENTITY_SERVICE_URL=http://identity:8000
+      - CART_SERVICE_URL=http://cart:8080
     networks:
       - wassimo-network
 
